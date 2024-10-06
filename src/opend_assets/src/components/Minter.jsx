@@ -11,6 +11,7 @@ function Minter() {
   const [isDisabled, setDisabled] = useState(false);
 
   async function onSubmit(data) {
+    console.log("Minting NFT...");
     setDisabled(true);
     const name = data.name;
     const image = data.image[0];
@@ -20,6 +21,7 @@ function Minter() {
     setNftPrincipal(newNFTId.toText());
 
     setDisabled(false);
+    console.log("NFT minted!");
   }
   
   if (nftPrincipal == "") {
@@ -61,7 +63,7 @@ function Minter() {
             </div>
           </div>
           <div className="form-ButtonBase-root form-Chip-root makeStyles-chipBlue-108 form-Chip-clickable">
-            <span disabled={isDisabled} onClick={handleSubmit(onSubmit)} className="form-Chip-label">Mint NFT</span>
+            <span onClick={!isDisabled ? handleSubmit(onSubmit) : undefined} className="form-Chip-label">Mint NFT</span>
           </div>
         </form>
       </div>
