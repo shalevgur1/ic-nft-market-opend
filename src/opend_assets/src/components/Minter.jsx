@@ -77,6 +77,7 @@ function Minter() {
         <div className="horizontal-center">
           <Item 
           id={Principal.fromText(nftPrincipal)}
+          role="minted"
           />
         </div>
       </div>

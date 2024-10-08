@@ -5,6 +5,8 @@ import { idlFactory } from "../../../declarations/nft";
 import { Principal } from "@dfinity/principal";
 import Button from "./Button";
 import { opend } from "../../../declarations/opend";
+import CURRENT_USER_ID from "../index";
+import PriceLable from "./PriceLable";
 
 
 function Item(props) {
@@ -17,6 +19,7 @@ function Item(props) {
   const [loaderHidden, setLoaderHidden] = useState(true);
   const [blur, setBlur] = useState();
   const [listedText, setListedText] = useState();
+  const [priceLable, setPriceLable] = useState();
 
   const id = props.id;
   const blurStyle = {filter: "blur(4px)"};
@@ -43,13 +46,31 @@ function Item(props) {
     setOwner(owner.toText());
     setImage(image);
 
-    const nftIsListed = await opend.isListed(id);
-    if (nftIsListed) {
-      setOwner("OpenD");
-      setBlur(blurStyle);
-      setListedText("Listed");
-    } else {
-      setButton(<Button handleClick={handleSell} text="Sell"/>);
+    // Check item role (dependes on the tab the user is in).
+    // Change style accordingly.
+    if (props.role === "collection") {
+      // Check if NFT is listed to change frontend style.
+      const nftIsListed = await opend.isListed(id);
+      if (nftIsListed) {
+        setOwner("OpenD");
+        setBlur(blurStyle);
+        setListedText("Listed");
+      } else {
+        setButton(<Button handleClick={handleSell} text="Sell"/>);
+      }
+    } else if (props.role === "discover") {
+      const originalOwner = await opend.getOriginalOwner(id);
+      if (originalOwner.toText() != CURRENT_USER_ID && originalOwner.toText() != "") {
+        setButton(<Button handleClick={handleBuy} text="Buy"/>);
+      }
+
+      const price = await opend.getListedNftPrice(id);
+      setPriceLable(<PriceLable sellPrice={price.toString()} />);
+
+    } else if (props.role === "minted") {
+      setButton();
+      setBlur();
+      setListedText();
     }
   }
 
@@ -59,6 +80,7 @@ function Item(props) {
 
   let price;
   function handleSell() {
+    // Handle the listing of an NFT in the market place.
     setPriceInput(
       <input
         placeholder="Price in DONG"
@@ -72,6 +94,7 @@ function Item(props) {
   }
 
   async function sellItem() {
+    // List an NFT for sale
     setBlur(blurStyle);
     setLoaderHidden(false);
     const listingResult = await opend.listItem(id, Number(price));
@@ -89,7 +112,11 @@ function Item(props) {
         setListedText("Listed");
       }
     }
+  }
 
+  async function handleBuy() {
+    // Handle the buying procedure of an NFT from the market place.
+    console.log("buy was triggered");
   }
 
   return (
@@ -107,6 +134,7 @@ function Item(props) {
           <div></div>
         </div>
         <div className="disCardContent-root">
+          {priceLable}
           <h2 className="disTypography-root makeStyles-bodyText-24 disTypography-h5 disTypography-gutterBottom">
             {name}<span className="purple-text"> {listedText}</span>
           </h2>

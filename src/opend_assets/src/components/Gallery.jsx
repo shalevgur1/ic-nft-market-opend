@@ -9,7 +9,7 @@ function Gallery(props) {
 
   function fetchNFTs() {
     if (props.nftList != undefined) {
-      setItems(props.nftList.map((nft) => <Item id={nft} key={nft.toText()}/>));
+      setItems(props.nftList.map((nft) => <Item id={nft} key={nft.toText()} role={props.role}/>));
       setLoadDisabled(false);
     } else {
       setLoadDisabled(true);

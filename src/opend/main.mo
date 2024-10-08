@@ -3,6 +3,8 @@ import NFTActorClass "../NFT/nft";
 import HashMap "mo:base/HashMap";
 import List "mo:base/List";
 import Debug "mo:base/Debug";
+import Iter "mo:base/Iter";
+import Nat "mo:base/Nat";
 
 actor OpenD {
 
@@ -58,6 +60,12 @@ actor OpenD {
         return List.toArray(userNFTs);
     };
 
+    public query func getListedNFTs() : async [Principal] {
+        // Return all NFTs that are listed for selling in the market place.
+        let listedNFTs = Iter.toArray(mapOfListings.keys());
+        return listedNFTs;
+    };
+
     public shared(msg) func listItem(itemPrincipal: Principal, price: Nat) : async Text {
         // List an nft for sale for sale. Include the nft in the list HashMap
         var item : NFTActorClass.NFT = switch (mapOfNFTs.get(itemPrincipal)) {
@@ -90,5 +98,21 @@ actor OpenD {
         } else {
             return false;
         }
+    };
+
+    public query func getOriginalOwner(nftPrinc : Principal) : async Principal {
+        var listing : Listing = switch (mapOfListings.get(nftPrinc)) {
+            case null return Principal.fromText("");
+            case (?result) result;
+        };
+        return listing.itemOwner;
+    };
+
+    public query func getListedNftPrice(nftPrinc : Principal) : async Nat {
+        var listing : Listing = switch (mapOfListings.get(nftPrinc)) {
+            case null return 0;
+            case (?result) result;
+        };
+        return listing.itemPrice;
     };
 };
