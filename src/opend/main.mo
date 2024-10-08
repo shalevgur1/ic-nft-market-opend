@@ -82,4 +82,13 @@ actor OpenD {
         // Return the opend canister principal id.
         return Principal.fromActor(OpenD);
     };
+
+    public query func isListed(princ : Principal) : async Bool {
+        // Check if an NFT is listed or not.
+        if (mapOfListings.get(princ) != null) {
+            return true;
+        } else {
+            return false;
+        }
+    };
 };

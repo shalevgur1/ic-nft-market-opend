@@ -14,8 +14,12 @@ function Item(props) {
   const [image, setImage] = useState();
   const [sellButton, setButton] = useState();
   const [priceInput, setPriceInput] = useState();
+  const [loaderHidden, setLoaderHidden] = useState(true);
+  const [blur, setBlur] = useState();
+  const [listedText, setListedText] = useState();
 
   const id = props.id;
+  const blurStyle = {filter: "blur(4px)"};
   const localHost = "http://localhost:8080/";
   const agent = new HttpAgent({host: localHost});
   // TODO: When deploying live, remove the following line
@@ -39,7 +43,14 @@ function Item(props) {
     setOwner(owner.toText());
     setImage(image);
 
-    setButton(<Button handleClick={handleSell} text="Sell"/>);
+    const nftIsListed = await opend.isListed(id);
+    if (nftIsListed) {
+      setOwner("OpenD");
+      setBlur(blurStyle);
+      setListedText("Listed");
+    } else {
+      setButton(<Button handleClick={handleSell} text="Sell"/>);
+    }
   }
 
   useEffect(() => {
@@ -61,14 +72,24 @@ function Item(props) {
   }
 
   async function sellItem() {
-    const listingResult = await opend.listItem(props.id, Number(price));
+    setBlur(blurStyle);
+    setLoaderHidden(false);
+    const listingResult = await opend.listItem(id, Number(price));
     console.log(listingResult);
     if(listingResult === "Success") {
       const opendPrinc = await opend.getOpendCanisterPrinc();
       // Transfering ownership to the opend canister (to the "market canister")
       const transferResult = await NFTActor.transferOwnership(opendPrinc);
       console.log(transferResult);
+      if(transferResult == "Success") {
+        setLoaderHidden(true);
+        setButton();
+        setPriceInput();
+        setOwner("OpenD");
+        setListedText("Listed");
+      }
     }
+
   }
 
   return (
@@ -77,10 +98,17 @@ function Item(props) {
         <img
           className="disCardMedia-root makeStyles-image-19 disCardMedia-media disCardMedia-img"
           src={image}
+          style={blur}
         />
+        <div hidden={loaderHidden} className="lds-ellipsis">
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
         <div className="disCardContent-root">
           <h2 className="disTypography-root makeStyles-bodyText-24 disTypography-h5 disTypography-gutterBottom">
-            {name}<span className="purple-text"></span>
+            {name}<span className="purple-text"> {listedText}</span>
           </h2>
           <p className="disTypography-root makeStyles-bodyText-24 disTypography-body2 disTypography-colorTextSecondary">
             Owner: {owner}

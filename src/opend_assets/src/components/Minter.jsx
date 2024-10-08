@@ -76,7 +76,7 @@ function Minter() {
         </h3>
         <div className="horizontal-center">
           <Item 
-          id={nftPrincipal}
+          id={Principal.fromText(nftPrincipal)}
           />
         </div>
       </div>
