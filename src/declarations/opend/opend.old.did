@@ -1,5 +1,6 @@
 service : {
   getListedNFTs: () -> (vec principal) query;
+  getListedNftPrice: (principal) -> (nat) query;
   getOpendCanisterPrinc: () -> (principal) query;
   getOriginalOwner: (principal) -> (principal) query;
   getOwnedNFTs: (principal) -> (vec principal) query;

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import logo from "../../assets/logo.png";
 import { Actor, HttpAgent } from "@dfinity/agent";
 import { idlFactory } from "../../../declarations/nft";
+import { idlFactory as tokenIdlFactory } from "../../../declarations/token";
 import { Principal } from "@dfinity/principal";
 import Button from "./Button";
 import { opend } from "../../../declarations/opend";
@@ -20,6 +21,7 @@ function Item(props) {
   const [blur, setBlur] = useState();
   const [listedText, setListedText] = useState();
   const [priceLable, setPriceLable] = useState();
+  const [shouldDisplay, setShouldDisplay] = useState(true);
 
   const id = props.id;
   const blurStyle = {filter: "blur(4px)"};
@@ -116,11 +118,30 @@ function Item(props) {
 
   async function handleBuy() {
     // Handle the buying procedure of an NFT from the market place.
-    console.log("buy was triggered");
+    setLoaderHidden(false);
+
+    const tokenActor = await Actor.createActor(tokenIdlFactory, {
+      agent,
+      canisterId: Principal.fromText("sp3hj-caaaa-aaaaa-aaajq-cai")
+    });
+
+    const sellerId = await opend.getOriginalOwner(id);
+    const nftPrice = await opend.getListedNftPrice(id);
+
+    // Transfer tokens between buyer and seller
+    const result = await tokenActor.transfer(sellerId, nftPrice);
+
+    if (result === "Success") {
+      // Transfer NFT ownership to buyer
+      const transferResult = await opend.purchase(id, sellerId, CURRENT_USER_ID);
+      console.log("Transfer NFT result: " + transferResult);
+      setLoaderHidden(true);
+      setShouldDisplay(false);
+    }
   }
 
   return (
-    <div className="disGrid-item">
+    <div style={{ display: shouldDisplay ? "inline" : "none" }} className="disGrid-item">
       <div className="disPaper-root disCard-root makeStyles-root-17 disPaper-elevation1 disPaper-rounded">
         <img
           className="disCardMedia-root makeStyles-image-19 disCardMedia-media disCardMedia-img"

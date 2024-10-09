@@ -5,6 +5,7 @@ import List "mo:base/List";
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
+import Text "mo:base/Text";
 
 actor OpenD {
 
@@ -40,7 +41,7 @@ actor OpenD {
     };
 
     private func addToOwnershipMap(owner: Principal, nftPrincipal: Principal) {
-        // Get list of NFTs by owner principal. return null for new owners
+        // Add new NFT to ownership list in ownership HashMap
         var ownedNFTs : List.List<Principal> = switch (mapOfOwners.get(owner)) {
             case null List.nil<Principal>();
             case (?result) result;
@@ -101,6 +102,7 @@ actor OpenD {
     };
 
     public query func getOriginalOwner(nftPrinc : Principal) : async Principal {
+        // Get original owner of NFT (when NFT is listed the owner that displayed is the opend market canister).
         var listing : Listing = switch (mapOfListings.get(nftPrinc)) {
             case null return Principal.fromText("");
             case (?result) result;
@@ -109,10 +111,42 @@ actor OpenD {
     };
 
     public query func getListedNftPrice(nftPrinc : Principal) : async Nat {
+        // Get NFT that is listed for sale price
         var listing : Listing = switch (mapOfListings.get(nftPrinc)) {
             case null return 0;
             case (?result) result;
         };
         return listing.itemPrice;
+    };
+
+    public shared(msg) func purchase(nftPrinc: Principal, ownerPrinc: Principal, newOwnerPrinc: Principal) : async Text {
+        // Handle purchasing of NFT. Transfer NFT ownership to a new owner.
+
+        // Get required NFT
+        var purchasedNFT : NFTActorClass.NFT = switch (mapOfNFTs.get(nftPrinc)) {
+            case null return "Requested NFT does not exist";
+            case (?result) result;
+        };
+
+        // Transfer NFT and change data in HashMaps
+        let transferResult = await purchasedNFT.transferOwnership(newOwnerPrinc);
+        if (transferResult == "Success") {
+            // Delete from market
+            mapOfListings.delete(nftPrinc);
+            // Delete from previous owner list
+            var ownedNFTs : List.List<Principal> = switch (mapOfOwners.get(ownerPrinc)) {
+                case null List.nil<Principal>();
+                case (?result) result;
+            };
+            ownedNFTs := List.filter(ownedNFTs, func (listNftPrinc : Principal) : Bool {
+                return listNftPrinc != nftPrinc;
+            });
+            mapOfOwners.put(ownerPrinc, ownedNFTs);
+            // Add to new owner list
+            addToOwnershipMap(newOwnerPrinc, nftPrinc);
+            return "Success";
+        } else {
+            return transferResult;
+        }
     };
 };
